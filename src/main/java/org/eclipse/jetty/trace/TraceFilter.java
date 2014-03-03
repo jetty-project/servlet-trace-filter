@@ -31,13 +31,38 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+/**
+ * The TraceFilter to capture the request/response headers and any I/O events
+ * from the point of view of this filter.
+ * <p>
+ * Init-parameters:
+ * <p>
+ * <dl>
+ *   <dt>trace-dir</dt>
+ *   <dd>
+ *     The output directory for trace*.log files.<br/>
+ *     Default: ${java.io.tmpdir}
+ *   </dd>
+ *   <dt>trace-id-header</dt>
+ *   <dd>
+ *     If specified, the filter will add a response header
+ *     including the filename (not full path) of the created trace*.log
+ *     for this specific request. Useful for relating a request details
+ *     found in a browser, a tcpdump, a wireshark capture, or even a 
+ *     test case to the actual on-disk captured details.<br/>
+ *     A good suitable value would be <code>"X-TraceId"</code>
+ *   </dd>
+ * </dl> 
+ */
 public class TraceFilter implements Filter
 {
+    private String traceIdHeaderName;
     private File traceDir;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException
     {
+        // Output directory for trace files
         traceDir = new File(System.getProperty("java.io.tmpdir"));
         String tempdir = filterConfig.getInitParameter("trace-dir");
         if (tempdir != null)
@@ -48,6 +73,9 @@ public class TraceFilter implements Filter
         {
             throw new ServletException("'trace-dir' does not exist: " + traceDir);
         }
+        
+        // Optional Response Header
+        traceIdHeaderName = filterConfig.getInitParameter("trace-id-header");
     }
 
     @Override
@@ -69,6 +97,10 @@ public class TraceFilter implements Filter
             {
                 // trace the request / response
                 TraceFile tracer = newTracer();
+                if (traceIdHeaderName != null)
+                {
+                    httpResp.setHeader(traceIdHeaderName,tracer.getOutputFile().getName());
+                }
                 TraceServletRequest traceReq = new TraceServletRequest(httpReq,tracer);
                 TraceServletResponse traceResp = new TraceServletResponse(httpResp,tracer);
                 chain.doFilter(traceReq,traceResp);

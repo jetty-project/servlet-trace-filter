@@ -22,8 +22,11 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
@@ -46,8 +49,10 @@ import org.junit.Test;
 
 public class TraceTest
 {
+    private static final String TRACEID_HEADER = "X-TraceId";
     private static Server server;
     private static URI serverURI;
+    private static File traceDir;
 
     @BeforeClass
     public static void startServer() throws Exception
@@ -68,9 +73,10 @@ public class TraceTest
 
         // Add the trace filter
         FilterHolder holderTrace = new FilterHolder(TraceFilter.class);
-        File traceDir = MavenTestingUtils.getTargetTestingDir("traces");
+        traceDir = MavenTestingUtils.getTargetTestingDir("traces");
         FS.ensureDirExists(traceDir);
         holderTrace.setInitParameter("trace-dir",traceDir.getAbsolutePath());
+        holderTrace.setInitParameter("trace-id-header",TRACEID_HEADER);
         context.addFilter(holderTrace,"/*",EnumSet.of(DispatcherType.REQUEST,DispatcherType.INCLUDE,DispatcherType.FORWARD));
 
         server.start(); // start server on its own thread
@@ -95,6 +101,17 @@ public class TraceTest
         String response = IO.toString(stream);
         assertThat("response",response,containsString("Hello World"));
         System.out.printf("Response: %s%n",response);
+
+        dumpTraceLog(conn.getHeaderField(TRACEID_HEADER));
+    }
+
+    private void dumpTraceLog(String traceId) throws FileNotFoundException, IOException
+    {
+        File traceFile = new File(traceDir,traceId);
+        try (FileReader reader = new FileReader(traceFile))
+        {
+            IO.copy(reader,new PrintWriter(System.out));
+        }
     }
 
     @AfterClass
