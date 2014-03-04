@@ -236,7 +236,7 @@ public class TraceFile implements Closeable, AsyncListener
         return requestContentCharFormatter;
     }
 
-    private ByteContentLogFormatter getResponseContentByteFormatter()
+    private synchronized ByteContentLogFormatter getResponseContentByteFormatter()
     {
         if (responseContentByteFormatter == null)
         {
@@ -245,7 +245,7 @@ public class TraceFile implements Closeable, AsyncListener
         return responseContentByteFormatter;
     }
 
-    private CharContentLogFormatter getResponseContentCharFormatter()
+    private synchronized CharContentLogFormatter getResponseContentCharFormatter()
     {
         if (responseContentCharFormatter == null)
         {
