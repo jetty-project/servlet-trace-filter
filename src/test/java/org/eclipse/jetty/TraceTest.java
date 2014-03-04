@@ -134,6 +134,32 @@ public class TraceTest
     }
 
     @Test
+    public void testLongCharacterRequest() throws IOException
+    {
+        URL url = serverURI.resolve("/long-char").toURL();
+        HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+        conn.setDoOutput(true);
+        conn.setRequestMethod("PUT");
+        conn.setRequestProperty("Content-Type","text/plain");
+
+        File quotesFile = MavenTestingUtils.getTestResourceFile("quotes.txt");
+        try (FileReader reader = new FileReader(quotesFile); //
+                OutputStream out = conn.getOutputStream(); //
+                OutputStreamWriter writer = new OutputStreamWriter(out))
+        {
+            IO.copy(reader,writer);
+        }
+
+        int status = conn.getResponseCode();
+        assertThat("response code",status,is(HttpURLConnection.HTTP_OK));
+        dumpTraceLog(conn.getHeaderField(TRACEID_HEADER));
+        InputStream stream = conn.getInputStream();
+        String response = IO.toString(stream);
+        assertThat("response",response,containsString("Read 426 characters"));
+        // System.out.printf("Response: %s%n",response);
+    }
+
+    @Test
     public void testLongCharacterResponse() throws IOException
     {
         URL url = serverURI.resolve("/long-char").toURL();

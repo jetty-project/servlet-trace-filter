@@ -21,6 +21,8 @@ package org.eclipse.jetty;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
 import java.io.Writer;
 
 import javax.servlet.ServletException;
@@ -45,6 +47,38 @@ public class LongWriterServlet extends HttpServlet
         try (FileReader reader = new FileReader(quotes))
         {
             IO.copy(reader,writer);
+        }
+    }
+
+    @Override
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
+    {
+        if (req.getContentType().contains("text/plain"))
+        {
+            long length = 0;
+            try (Reader reader = req.getReader())
+            {
+                while (reader.read() != (-1))
+                {
+                    length++;
+                }
+            }
+
+            resp.setContentType("text/plain");
+            resp.getWriter().printf("Read %,d characters",length);
+        }
+        else
+        {
+            long length = 0;
+            try (InputStream stream = req.getInputStream())
+            {
+                while (stream.read() != (-1))
+                {
+                    length++;
+                }
+            }
+            resp.setContentType("text/plain");
+            resp.getWriter().printf("Read %,d bytes",length);
         }
     }
 }
