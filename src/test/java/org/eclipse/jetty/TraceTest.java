@@ -38,7 +38,6 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.toolchain.test.FS;
 import org.eclipse.jetty.toolchain.test.MavenTestingUtils;
 import org.eclipse.jetty.trace.TraceFilter;
@@ -67,9 +66,11 @@ public class TraceTest
         context.setContextPath("/");
         server.setHandler(context);
 
-        // Add a servlet
-        ServletHolder holderHello = new ServletHolder("hello",HelloWorldServlet.class);
-        context.addServlet(holderHello,"/hello");
+        // Add some servlets for testing against
+        context.addServlet(ShortWriterServlet.class,"/short-char");
+        context.addServlet(LongWriterServlet.class,"/long-char");
+        context.addServlet(ShortBinaryServlet.class,"/short-binary");
+        context.addServlet(LongBinaryServlet.class,"/long-binary");
 
         // Add the trace filter
         FilterHolder holderTrace = new FilterHolder(TraceFilter.class);
@@ -90,23 +91,16 @@ public class TraceTest
         serverURI = new URI("http://" + host + ":" + port);
     }
 
-    @Test
-    public void makeClientRequest() throws IOException
+    @AfterClass
+    public static void stopServer() throws Exception
     {
-        URL url = serverURI.resolve("/hello").toURL();
-        HttpURLConnection conn = (HttpURLConnection)url.openConnection();
-        int status = conn.getResponseCode();
-        assertThat("response code",status,is(HttpURLConnection.HTTP_OK));
-        InputStream stream = conn.getInputStream();
-        String response = IO.toString(stream);
-        assertThat("response",response,containsString("Hello World"));
-        System.out.printf("Response: %s%n",response);
-
-        dumpTraceLog(conn.getHeaderField(TRACEID_HEADER));
+        server.stop();
     }
 
     private void dumpTraceLog(String traceId) throws FileNotFoundException, IOException
     {
+        System.out.println();
+        System.out.printf("--Dump of %s--%n",traceId);
         File traceFile = new File(traceDir,traceId);
         try (FileReader reader = new FileReader(traceFile))
         {
@@ -114,9 +108,59 @@ public class TraceTest
         }
     }
 
-    @AfterClass
-    public static void stopServer() throws Exception
+    @Test
+    public void testLongBinaryResponse() throws IOException
     {
-        server.stop();
+        URL url = serverURI.resolve("/long-binary").toURL();
+        HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+        int status = conn.getResponseCode();
+        assertThat("response code",status,is(HttpURLConnection.HTTP_OK));
+        dumpTraceLog(conn.getHeaderField(TRACEID_HEADER));
+        InputStream stream = conn.getInputStream();
+        String response = IO.toString(stream);
+        assertThat("response",response,containsString("Benjamin Franklin"));
+        // System.out.printf("Response: %s%n",response);
+    }
+
+    @Test
+    public void testLongCharacterResponse() throws IOException
+    {
+        URL url = serverURI.resolve("/long-char").toURL();
+        HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+        int status = conn.getResponseCode();
+        assertThat("response code",status,is(HttpURLConnection.HTTP_OK));
+        dumpTraceLog(conn.getHeaderField(TRACEID_HEADER));
+        InputStream stream = conn.getInputStream();
+        String response = IO.toString(stream);
+        assertThat("response",response,containsString("Benjamin Franklin"));
+        // System.out.printf("Response: %s%n",response);
+    }
+
+    @Test
+    public void testShortBinaryResponse() throws IOException
+    {
+        URL url = serverURI.resolve("/short-binary").toURL();
+        HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+        int status = conn.getResponseCode();
+        assertThat("response code",status,is(HttpURLConnection.HTTP_OK));
+        dumpTraceLog(conn.getHeaderField(TRACEID_HEADER));
+        InputStream stream = conn.getInputStream();
+        String response = IO.toString(stream);
+        assertThat("response",response,containsString("Hello World"));
+        // System.out.printf("Response: %s%n",response);
+    }
+
+    @Test
+    public void testShortCharacterResponse() throws IOException
+    {
+        URL url = serverURI.resolve("/short-char").toURL();
+        HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+        int status = conn.getResponseCode();
+        assertThat("response code",status,is(HttpURLConnection.HTTP_OK));
+        dumpTraceLog(conn.getHeaderField(TRACEID_HEADER));
+        InputStream stream = conn.getInputStream();
+        String response = IO.toString(stream);
+        assertThat("response",response,containsString("Hello World"));
+        // System.out.printf("Response: %s%n",response);
     }
 }

@@ -35,6 +35,22 @@ public class TraceServletInputStream extends ServletInputStream
     }
 
     @Override
+    public void close() throws IOException
+    {
+        tracer.logRequestContentClose();
+        try
+        {
+            delegate.close();
+            tracer.log("Closed: %s",delegate);
+        }
+        catch (IOException e)
+        {
+            tracer.log(e);
+            throw e;
+        }
+    }
+
+    @Override
     public boolean isFinished()
     {
         return delegate.isFinished();
@@ -44,12 +60,6 @@ public class TraceServletInputStream extends ServletInputStream
     public boolean isReady()
     {
         return delegate.isReady();
-    }
-
-    @Override
-    public void setReadListener(ReadListener readListener)
-    {
-        delegate.setReadListener(readListener);
     }
 
     @Override
@@ -76,41 +86,8 @@ public class TraceServletInputStream extends ServletInputStream
     }
 
     @Override
-    public void close() throws IOException
+    public void setReadListener(ReadListener readListener)
     {
-        tracer.logRequestContentClose();
-        try
-        {
-            delegate.close();
-            tracer.log("Closed: %s",delegate);
-        }
-        catch (IOException e)
-        {
-            tracer.log(e);
-            throw e;
-        }
-    }
-
-    @Override
-    public int read(byte[] b, int off, int len) throws IOException
-    {
-        try
-        {
-            int ret = delegate.read(b,off,len);
-            if (ret != (-1))
-            {
-                tracer.logRequestContentByte(b,off,ret);
-            }
-            else
-            {
-                tracer.log("EOF reached on %s",delegate);
-            }
-            return ret;
-        }
-        catch (IOException e)
-        {
-            tracer.log(e);
-            throw e;
-        }
+        delegate.setReadListener(readListener);
     }
 }

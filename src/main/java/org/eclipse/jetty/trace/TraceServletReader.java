@@ -34,6 +34,22 @@ public class TraceServletReader extends BufferedReader
     }
 
     @Override
+    public void close() throws IOException
+    {
+        try
+        {
+            tracer.logRequestContentClose();
+            super.close();
+            tracer.log("Closed: %s",delegate);
+        }
+        catch (IOException e)
+        {
+            tracer.log(e);
+            throw e;
+        }
+    }
+
+    @Override
     public int read() throws IOException
     {
         try
@@ -50,45 +66,6 @@ public class TraceServletReader extends BufferedReader
             }
 
             return ret;
-        }
-        catch (IOException e)
-        {
-            tracer.log(e);
-            throw e;
-        }
-    }
-
-    @Override
-    public int read(char[] cbuf, int off, int len) throws IOException
-    {
-        try
-        {
-            int ret = super.read(cbuf,off,len);
-            if (ret != (-1))
-            {
-                tracer.logRequestContentChar(cbuf,off,ret);
-            }
-            else
-            {
-                tracer.log("EOF reached on %s",delegate);
-            }
-            return ret;
-        }
-        catch (IOException e)
-        {
-            tracer.log(e);
-            throw e;
-        }
-    }
-
-    @Override
-    public void close() throws IOException
-    {
-        try
-        {
-            tracer.logRequestContentClose();
-            super.close();
-            tracer.log("Closed: %s",delegate);
         }
         catch (IOException e)
         {

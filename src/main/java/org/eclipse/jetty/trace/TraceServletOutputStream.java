@@ -35,12 +35,13 @@ public class TraceServletOutputStream extends ServletOutputStream
     }
 
     @Override
-    public void flush() throws IOException
+    public void close() throws IOException
     {
         try
         {
-            super.flush();
-            tracer.log("Flushed: %s",delegate);
+            tracer.logResponseContentClose();
+            super.close();
+            tracer.log("Closed: %s",delegate);
         }
         catch (IOException e)
         {
@@ -50,13 +51,12 @@ public class TraceServletOutputStream extends ServletOutputStream
     }
 
     @Override
-    public void close() throws IOException
+    public void flush() throws IOException
     {
         try
         {
-            tracer.logResponseContentClose();
-            super.close();
-            tracer.log("Closed: %s",delegate);
+            super.flush();
+            tracer.log("Flushed: %s",delegate);
         }
         catch (IOException e)
         {
@@ -75,36 +75,6 @@ public class TraceServletOutputStream extends ServletOutputStream
     public void setWriteListener(WriteListener writeListener)
     {
         this.delegate.setWriteListener(writeListener);
-    }
-
-    @Override
-    public void write(byte[] b) throws IOException
-    {
-        try
-        {
-            tracer.logResponseContentBytes(b);
-            delegate.write(b);
-        }
-        catch (IOException e)
-        {
-            tracer.log(e);
-            throw e;
-        }
-    }
-
-    @Override
-    public void write(byte[] b, int off, int len) throws IOException
-    {
-        try
-        {
-            tracer.logResponseContentBytes(b,off,len);
-            delegate.write(b,off,len);
-        }
-        catch (IOException e)
-        {
-            tracer.log(e);
-            throw e;
-        }
     }
 
     @Override

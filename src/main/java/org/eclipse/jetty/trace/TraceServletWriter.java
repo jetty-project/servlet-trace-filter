@@ -22,6 +22,8 @@ import java.io.PrintWriter;
 
 public class TraceServletWriter extends PrintWriter
 {
+    private final static String LINESEP = System.lineSeparator();
+    private final static int LINESEPLEN = LINESEP.length();
     private final PrintWriter delegate;
     private final TraceFile tracer;
 
@@ -33,38 +35,11 @@ public class TraceServletWriter extends PrintWriter
     }
 
     @Override
-    public void write(int c)
+    public void close()
     {
-        tracer.logResponseContentChar(c);
-        super.write(c);
-    }
-
-    @Override
-    public void write(char[] buf, int off, int len)
-    {
-        tracer.logResponseContentChar(buf,off,len);
-        super.write(buf,off,len);
-    }
-
-    @Override
-    public void write(char[] buf)
-    {
-        tracer.logResponseContentChar(buf);
-        super.write(buf);
-    }
-
-    @Override
-    public void write(String s, int off, int len)
-    {
-        tracer.logResponseContentChar(s,off,len);
-        super.write(s,off,len);
-    }
-
-    @Override
-    public void write(String s)
-    {
-        tracer.logResponseContentChar(s);
-        super.write(s);
+        tracer.logResponseContentClose();
+        tracer.log("Closed: %s",delegate);
+        super.close();
     }
 
     @Override
@@ -75,10 +50,30 @@ public class TraceServletWriter extends PrintWriter
     }
 
     @Override
-    public void close()
+    public void println()
     {
-        tracer.logResponseContentClose();
-        tracer.log("Closed: %s",delegate);
-        super.close();
+        tracer.logResponseContentChar(LINESEP,0,LINESEPLEN);
+        super.println();
+    }
+
+    @Override
+    public void write(char[] buf, int off, int len)
+    {
+        tracer.logResponseContentChar(buf,off,len);
+        super.write(buf,off,len);
+    }
+
+    @Override
+    public void write(int c)
+    {
+        tracer.logResponseContentChar(c);
+        super.write(c);
+    }
+
+    @Override
+    public void write(String s, int off, int len)
+    {
+        tracer.logResponseContentChar(s,off,len);
+        super.write(s,off,len);
     }
 }
